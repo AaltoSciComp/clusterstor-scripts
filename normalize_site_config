@@ -1,0 +1,38 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from clusterstor_tools.common import print_header, print_smallheader, create_logger
+from clusterstor_tools.siteconfig import (
+    read_config, write_config)
+
+def normalize_site_config(site_conf: dict = None,
+                     dryrun: bool = True) -> None:
+    """ Normalize site configuration. """
+    print_header('Sorting site configuration')
+
+    site_config = read_config(site_conf)
+
+    write_config(site_conf, site_config, dryrun=dryrun)
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--site-conf',
+                        default='aalto.yaml',
+                        help='Configuration file to use (default: aalto.yaml')
+    parser.add_argument('-c', '--commit',
+                        default=False, action='store_true',
+                        help="Actually make the changes (default: run in dry-run mode)")
+    parser.add_argument('-v', '--verbose',
+                        default=False, action='store_true',
+                        help='Print all output, not only changes.')
+
+    args = parser.parse_args()
+
+    dryrun = not args.commit
+
+    create_logger(args.verbose)
+
+    normalize_site_config(site_conf=args.site_conf,
+                     dryrun=dryrun)

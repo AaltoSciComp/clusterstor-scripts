@@ -1,0 +1,63 @@
+  lcm_layout_gen:    0
+  lcm_mirror_count:  1
+  lcm_entry_count:   5
+  component0:
+    lcme_id:             N/A
+    lcme_mirror_id:      N/A
+    lcme_flags:          0
+    lcme_extent.e_start: 0
+    lcme_extent.e_end:   65536
+    sub_layout:
+      stripe_count:  0
+      stripe_size:   65536
+      pattern:       mdt
+      stripe_offset: -1
+
+  component1:
+    lcme_id:             N/A
+    lcme_mirror_id:      N/A
+    lcme_flags:          0
+    lcme_extent.e_start: 65536
+    lcme_extent.e_end:   1073741824
+    sub_layout:
+      stripe_count:  1
+      stripe_size:   4194304
+      pattern:       raid0
+      stripe_offset: -1
+
+  component2:
+    lcme_id:             N/A
+    lcme_mirror_id:      N/A
+    lcme_flags:          0
+    lcme_extent.e_start: 1073741824
+    lcme_extent.e_end:   68719476736
+    sub_layout:
+      stripe_count:  4
+      stripe_size:   4194304
+      pattern:       raid0
+      stripe_offset: -1
+
+  component3:
+    lcme_id:             N/A
+    lcme_mirror_id:      N/A
+    lcme_flags:          0
+    lcme_extent.e_start: 68719476736
+    lcme_extent.e_end:   1099511627776
+    sub_layout:
+      stripe_count:  8
+      stripe_size:   4194304
+      pattern:       raid0
+      stripe_offset: -1
+
+  component4:
+    lcme_id:             N/A
+    lcme_mirror_id:      N/A
+    lcme_flags:          0
+    lcme_extent.e_start: 1099511627776
+    lcme_extent.e_end:   EOF
+    sub_layout:
+      stripe_count:  -1
+      stripe_size:   4194304
+      pattern:       raid0
+      stripe_offset: -1
+

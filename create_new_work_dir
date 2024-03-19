@@ -1,0 +1,68 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from clusterstor_tools.common import (
+    create_logger, catch_interrupt, print_header, print_smallheader)
+from clusterstor_tools.siteconfig import (
+    read_config, get_main_work_dir, get_new_work_dir)
+from clusterstor_tools.dir_ops import create_dirstriped_dir
+from clusterstor_tools.stripe_ops import set_striping, compare_striping
+from clusterstor_tools.main_funcs import create_work_dir
+
+
+@catch_interrupt
+def create_new_work_dir(
+        user: str = None,
+        site_conf: dict = None,
+        dryrun: bool = True,
+        skip_confirm: bool = False) -> None:
+    """ Create new work directory. """
+    print_header('Creating user work directory')
+    workdir_info = get_new_work_dir(site_conf, user)
+    create_work_dir(
+      workdir_info=workdir_info,
+      redo_striping=True,
+      redo_project_ids=True,
+      redo_quotas=True,
+      redo_ownerships=True,
+      strict_project_checking=True,
+      dryrun=dryrun,
+      skip_confirm=skip_confirm)
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--site-conf',
+                        default='aalto.yaml',
+                        help='Configuration file to use (default: aalto.yaml')
+    parser.add_argument('-c', '--commit',
+                        default=False, action='store_true',
+                        help="Actually make the changes (default: run in dry-run mode)")
+    parser.add_argument('-y', '--yes',
+                        default=False, action='store_true',
+                        help="Answer yes to all questions (default: False)")
+    parser.add_argument('-v', '--verbose',
+                        default=False, action='store_true',
+                        help='Print all output, not only changes.')
+    parser.add_argument('user', type=str, nargs=1,
+                        help='User to create')
+
+    args = parser.parse_args()
+
+    user = args.user[0]
+
+    dryrun = not args.commit
+
+    skip_confirm = args.yes
+
+    site_conf = read_config(args.site_conf)
+
+    create_logger(args.verbose)
+
+    create_new_work_dir(
+                     user=user,
+                     site_conf=site_conf,
+                     dryrun=dryrun,
+                     skip_confirm=skip_confirm)

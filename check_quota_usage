@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from clusterstor_tools.common import (
+    create_logger, catch_interrupt, print_header)
+from clusterstor_tools.siteconfig import (
+    read_config, get_project_dirs, get_work_dirs)
+from clusterstor_tools.quota_ops import (
+    get_project_quotadict, generate_project_id)
+from typing import List
+
+
+@catch_interrupt
+def check_project_quota(
+        projects: List[str] = None,
+        site_conf: dict = None) -> None:
+    """ Check quota """
+    print_header('Checking quotas')
+
+    dir_info = list(get_project_dirs(site_conf)) + list(get_work_dirs(site_conf))
+
+    for project in projects:
+        print_header(project)
+        try:
+            project_info = [ p for p in dir_info if p['name'] == project ][0]
+        except IndexError:
+            print(f'No project named {project} found!')
+            continue
+        mountpoint = project_info["mountpoint"]
+        folder_path = project_info["path"]
+        project_id = generate_project_id(project)
+        quota = get_project_quotadict(mountpoint, project_id)
+        print(f"""
+Project name: {project}
+Project ID: {project_id}
+Project path: {folder_path}
+
+Usage:
+    byte usage  / byte quota  : {quota['byte_usage']} / {quota['byte_quota']}
+    inode usage / inode quota : {quota['inode_usage']} / {quota['inode_quota']}
+""")
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--site-conf',
+                        default='aalto.yaml',
+                        help='Configuration file to use (default: aalto.yaml)')
+    parser.add_argument('-v', '--verbose',
+                        default=False, action='store_true',
+                        help='Print all output.')
+    parser.add_argument('projects', type=str, nargs='+',
+                        help='Projects to check')
+
+    args = parser.parse_args()
+
+    projects = args.projects
+
+    site_conf = read_config(args.site_conf)
+
+    create_logger(args.verbose)
+
+    check_project_quota(projects=projects, site_conf=site_conf)

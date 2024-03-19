@@ -1,0 +1,31 @@
+defaults:
+  stripe_parameters: "-E 65536 -L mdt -E 1G -c 1 -S 4M -E 64G -c 4 -S 4M -E 1T -c 8 -S 4M -E -1 -c -1 -S 4M"
+  stripe_parameter_reference: "striping-reference.yml"
+  dirstripe_count: 2
+  mountpoint: "/mnt/lustre/clusterstor-scripts-test"
+  users_group: "my_users"
+  work_dir_name: "work"
+  default_quotas:
+    projects:
+      byte_quota: 200G
+      inode_quota: 1M
+    workdir:
+      byte_quota: 200G
+      inode_quota: 1M
+project_dirs:
+  # Create department project
+  cs:
+    cs_project1:
+      byte_quota: 1T
+      inode_quota: 1M
+    cs_project2:
+      byte_quota: 2T
+      inode_quota: 10M
+  phys:
+    # Use default quotas
+    phys_project1: {}
+work_dirs:
+  # Set user quota
+  username1:
+    byte_quota: 2T
+    inode_quota: 10M

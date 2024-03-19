@@ -1,0 +1,106 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from clusterstor_tools.common import (
+    create_logger, catch_interrupt, print_header, print_smallheader)
+from clusterstor_tools.siteconfig import (
+    read_config, get_main_work_dir, get_work_dirs)
+from clusterstor_tools.dir_ops import create_dirstriped_dir
+from clusterstor_tools.stripe_ops import set_striping, compare_striping
+from clusterstor_tools.main_funcs import create_work_dir
+
+@catch_interrupt
+def create_main_work_dir(site_conf: dict = None,
+                         redo_striping: bool = None,
+                         dryrun: bool = True) -> None:
+    """ Create main work directory. """
+    print_header('Creating main work directory')
+    main_work_info = get_main_work_dir(site_conf)
+    print_smallheader(
+        "Working with main work directory: '{0}'".format(main_work_info['path']))
+    directory_created = create_dirstriped_dir(
+        main_work_info['path'],
+        main_work_info['dirstripe_count'],
+        dryrun=dryrun)
+    if (directory_created or
+        (redo_striping and
+         not compare_striping(
+               main_work_info['path'],
+               main_work_info['stripe_parameter_reference']))):
+        set_striping(
+            main_work_info['path'],
+            main_work_info['stripe_parameters'],
+            dryrun=dryrun)
+
+
+@catch_interrupt
+def create_work_dirs(site_conf: dict = None,
+                     redo_striping: bool = None,
+                     redo_project_ids: bool = None,
+                     redo_quotas: bool = None,
+                     redo_ownerships: bool = None,
+                     strict_project_checking: bool = None,
+                     dryrun: bool = True) -> None:
+    """ Create user work directories. """
+    print_header('Creating user work directories')
+    for workdir_info in get_work_dirs(site_conf):
+      create_work_dir(
+        workdir_info=workdir_info,
+        redo_striping=redo_striping,
+        redo_project_ids=redo_project_ids,
+        redo_quotas=redo_quotas,
+        redo_ownerships=redo_ownerships,
+        strict_project_checking=strict_project_checking,
+        dryrun=dryrun)
+
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--site-conf',
+                        default='aalto.yaml',
+                        help='Configuration file to use (default: aalto.yaml')
+    parser.add_argument('-c', '--commit',
+                        default=False, action='store_true',
+                        help="Actually make the changes (default: run in dry-run mode)")
+    parser.add_argument('-t', '--redo-striping',
+                        default=False, action='store_true',
+                        help="Redo striping on department/project folders (default: False)")
+    parser.add_argument('-p', '--redo-project-ids',
+                        default=False, action='store_true',
+                        help='Redo project quota IDs of work folders')
+    parser.add_argument('-P', '--redo-project-ids-strict',
+                        default=False, action='store_true',
+                        help='Redo project quota IDs of work folders (check IDs)')
+    parser.add_argument('-q', '--redo-quotas',
+                        default=False, action='store_true',
+                        help='Redo quotas on work folders')
+    parser.add_argument('-o', '--redo-ownerships',
+                        default=False, action='store_true',
+                        help='Redo user and group ownership & permission settings on work directories')
+    parser.add_argument('-v', '--verbose',
+                        default=False, action='store_true',
+                        help='Print all output, not only changes.')
+
+    args = parser.parse_args()
+
+    dryrun = not args.commit
+
+    site_conf = read_config(args.site_conf)
+
+    redo_project_ids = args.redo_project_ids or args.redo_project_ids_strict
+
+    create_logger(args.verbose)
+
+    create_main_work_dir(site_conf=site_conf,
+                         redo_striping=args.redo_striping,
+                         dryrun=dryrun)
+
+    create_work_dirs(site_conf=site_conf,
+                     redo_striping=args.redo_striping,
+                     redo_project_ids=redo_project_ids,
+                     redo_quotas=args.redo_quotas,
+                     redo_ownerships=args.redo_ownerships,
+                     strict_project_checking=args.redo_project_ids_strict,
+                     dryrun=dryrun)

@@ -1,0 +1,105 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+import argparse
+from clusterstor_tools.common import (
+    create_logger, catch_interrupt, print_header, print_smallheader)
+from clusterstor_tools.siteconfig import (
+    read_config, get_department_dirs, get_project_dirs)
+from clusterstor_tools.dir_ops import create_dirstriped_dir
+from clusterstor_tools.stripe_ops import set_striping, compare_striping
+from clusterstor_tools.main_funcs import create_project_dir
+
+@catch_interrupt
+def create_department_dirs(site_conf: dict = None,
+                           redo_striping: bool = None,
+                           dryrun: bool = True) -> None:
+    """ Create deparment directories. """
+    print_header('Creating department directories')
+    for department_info in get_department_dirs(site_conf):
+        print_smallheader(
+            "Working with department: '{0}'".format(department_info['name']))
+        directory_created = create_dirstriped_dir(
+            department_info['path'],
+            department_info['dirstripe_count'],
+            dryrun=dryrun)
+        if (directory_created or
+            (redo_striping and
+             not compare_striping(
+                   department_info['path'],
+                   department_info['stripe_parameter_reference']))):
+            set_striping(
+                department_info['path'],
+                department_info['stripe_parameters'],
+                dryrun=dryrun)
+
+
+@catch_interrupt
+def create_project_dirs(site_conf: dict = None,
+                        redo_striping: bool = None,
+                        redo_project_ids: bool = None,
+                        redo_quotas: bool = None,
+                        redo_ownerships: bool = None,
+                        strict_project_checking: bool = None,
+                        dryrun: bool = True) -> None:
+    """ Create project directories. """
+    print_header('Creating project directories')
+    for project_info in get_project_dirs(site_conf):
+        create_project_dir(
+          project_info=project_info,
+          redo_striping=redo_striping,
+          redo_project_ids=redo_project_ids,
+          redo_quotas=redo_quotas,
+          redo_ownerships=redo_ownerships,
+          strict_project_checking=strict_project_checking,
+          dryrun=dryrun)
+
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--site-conf',
+                        default='aalto.yaml',
+                        help='Configuration file to use (default: aalto.yaml')
+    parser.add_argument('-c', '--commit',
+                        default=False, action='store_true',
+                        help="Actually make the changes (default: run in dry-run mode)")
+    parser.add_argument('-t', '--redo-striping',
+                        default=False, action='store_true',
+                        help="Redo striping on department/project folders (default: False)")
+    parser.add_argument('-p', '--redo-project-ids',
+                        default=False, action='store_true',
+                        help='Redo project quota IDs of project folders')
+    parser.add_argument('-P', '--redo-project-ids-strict',
+                        default=False, action='store_true',
+                        help='Redo project quota IDs of project folders (check IDs)')
+    parser.add_argument('-q', '--redo-quotas',
+                        default=False, action='store_true',
+                        help='Redo quotas on project folders')
+    parser.add_argument('-o', '--redo-ownerships',
+                        default=False, action='store_true',
+                        help='Redo group ownership & permission settings on project folders')
+    parser.add_argument('-v', '--verbose',
+                        default=False, action='store_true',
+                        help='Print all output, not only changes.')
+
+    args = parser.parse_args()
+
+    dryrun = not args.commit
+
+    site_conf = read_config(args.site_conf)
+ 
+    redo_project_ids = args.redo_project_ids or args.redo_project_ids_strict
+
+    create_logger(args.verbose)
+
+    create_department_dirs(site_conf=site_conf,
+                           redo_striping=args.redo_striping,
+                           dryrun=dryrun)
+
+    create_project_dirs(site_conf=site_conf,
+                        redo_striping=args.redo_striping,
+                        redo_project_ids=redo_project_ids,
+                        redo_quotas=args.redo_quotas,
+                        redo_ownerships=args.redo_ownerships,
+                        strict_project_checking=args.redo_project_ids_strict,
+                        dryrun=dryrun)
